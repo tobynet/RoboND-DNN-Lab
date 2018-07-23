@@ -10,7 +10,7 @@
 
 # To start this lab, you first need to import all the necessary modules. Run the code below. If it runs successfully, it will print "`All modules imported`".
 
-# In[6]:
+# In[1]:
 
 
 import hashlib
@@ -32,7 +32,7 @@ dataset_directory = '../datasets/'
 
 # The notMNIST dataset is too large for many computers to handle.  It contains 500,000 images for just training.  You'll be using a subset of this data, 15,000 images for each label (A-J).
 
-# In[7]:
+# In[2]:
 
 
 
@@ -61,7 +61,7 @@ assert hashlib.md5(open(os.path.join(dataset_directory, 'notMNIST_test.zip'), 'r
 print('All files downloaded.')
 
 
-# In[8]:
+# In[3]:
 
 
 def uncompress_features_labels(file):
@@ -229,7 +229,7 @@ print('Data cached in pickle file.')
 # # Checkpoint
 # All your progress is now saved to the pickle file.  If you need to leave and comeback to this lab, you no longer have to start from the beginning.  Just run the code block below and it will load all the data and modules required to proceed.
 
-# In[13]:
+# In[4]:
 
 
 get_ipython().run_line_magic('matplotlib', 'inline')
@@ -238,6 +238,7 @@ get_ipython().run_line_magic('matplotlib', 'inline')
 import pickle
 import gzip # 圧縮されたキャッシュ用
 import math
+import os
 
 import numpy as np
 import tensorflow as tf
@@ -278,7 +279,7 @@ print('Data and modules loaded.')
 #   - List of Variable Tensors with all zeros for each list index.
 #     - See <a href="https://www.tensorflow.org/api_docs/python/constant_op.html#zeros"> `tf.zeros()` documentation</a> for help.
 
-# In[16]:
+# In[5]:
 
 
 tf.reset_default_graph()
@@ -340,7 +341,7 @@ print("done")
 # - [tf.nn.relu](https://www.tensorflow.org/api_docs/python/tf/nn/relu) for your ReLU activation function.
 # - [tf.nn.dropout](https://www.tensorflow.org/api_docs/python/tf/nn/dropout) for your dropout layer.
 
-# In[17]:
+# In[6]:
 
 
 if 'hidden_layer_1' in globals(): del hidden_layer_1; print('deleted')
@@ -349,7 +350,7 @@ if 'hidden_layer_3' in globals(): del hidden_layer_3; print('deleted')
 if 'logits' in globals(): del logits; print('deleted')
 
 
-# In[18]:
+# In[7]:
 
 
 # TODO: Hidden Layers with ReLU Activation and dropouts. "features" would be the input to the first layer.
@@ -382,7 +383,7 @@ print('hidden_layers: ', len(hidden_layers))
 # logits = hidden_layer_2 @ weights[2] + biases[2]
 
 
-# In[19]:
+# In[8]:
 
 
 ### DON'T MODIFY ANYTHING BELOW ###
@@ -409,7 +410,7 @@ print('Accuracy function created.')
 # 
 # You have another hyperparameter to tune now, however. Set the value for keep_probability and observe how it affects your results.
 
-# In[20]:
+# In[9]:
 
 
 get_ipython().run_cell_magic('time', '', "# TODO: Find the best parameters for each configuration\nepochs = 10\nbatch_size = 50\nlearning_rate = 0.01\nkeep_probability = 1.0\n\n\n### DON'T MODIFY ANYTHING BELOW ###\n# Gradient Descent\noptimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss)    \n\n# The accuracy measured against the validation set\nvalidation_accuracy = 0.0\n\n# Measurements use for graphing loss and accuracy\nlog_batch_step = 50\nbatches = []\nloss_batch = []\ntrain_acc_batch = []\nvalid_acc_batch = []\n\nwith tf.Session() as session:\n    session.run(init)\n    batch_count = int(math.ceil(len(train_features)/batch_size))\n\n    for epoch_i in range(epochs):\n        \n        # Progress bar\n        batches_pbar = tqdm(range(batch_count), desc='Epoch {:>2}/{}'.format(epoch_i+1, epochs), unit='batches')\n        \n        # The training cycle\n        for batch_i in batches_pbar:\n            # Get a batch of training features and labels\n            batch_start = batch_i*batch_size\n            batch_features = train_features[batch_start:batch_start + batch_size]\n            batch_labels = train_labels[batch_start:batch_start + batch_size]\n\n            # Run optimizer and get loss\n            _, l = session.run(\n                [optimizer, loss],\n                feed_dict={features: batch_features, labels: batch_labels, keep_prob: keep_probability})\n\n            # Log every 50 batches\n            if not batch_i % log_batch_step:\n                # Calculate Training and Validation accuracy\n                training_accuracy = session.run(accuracy, feed_dict={features: train_features, \n                                                                     labels: train_labels, keep_prob: keep_probability})\n                validation_accuracy = session.run(accuracy, feed_dict={features: valid_features, \n                                                                     labels: valid_labels, keep_prob: 1.0})\n                # Log batches\n                previous_batch = batches[-1] if batches else 0\n                batches.append(log_batch_step + previous_batch)\n                loss_batch.append(l)\n                train_acc_batch.append(training_accuracy)\n                valid_acc_batch.append(validation_accuracy)\n\n        # Check accuracy against Validation data\n        validation_accuracy = session.run(accuracy, feed_dict={features: valid_features, \n                                                                     labels: valid_labels, keep_prob: 1.0})\n        print('  Validation accuracy at {}'.format(validation_accuracy))\n\n\nloss_plot = plt.subplot(211)\nloss_plot.set_title('Loss')\nloss_plot.plot(batches, loss_batch, 'g')\nloss_plot.set_xlim([batches[0], batches[-1]])\nacc_plot = plt.subplot(212)\nacc_plot.set_title('Accuracy')\nacc_plot.plot(batches, train_acc_batch, 'r', label='Training Accuracy')\nacc_plot.plot(batches, valid_acc_batch, 'x', label='Validation Accuracy')\nacc_plot.set_ylim([0, 1.0])\nacc_plot.set_xlim([batches[0], batches[-1]])\nacc_plot.legend(loc=4)\nplt.tight_layout()\nplt.show()\n\nprint('Validation accuracy at {}'.format(validation_accuracy))")
@@ -418,7 +419,7 @@ get_ipython().run_cell_magic('time', '', "# TODO: Find the best parameters for e
 # ## Test
 # Set the epochs, batch_size, and learning_rate with the best learning parameters you discovered in problem 4.  You're going to test your model against your hold out dataset/testing data.  This will give you a good indicator of how well the model will do in the real world.
 
-# In[21]:
+# In[10]:
 
 
 get_ipython().run_cell_magic('time', '', "# TODO: Set the epochs, batch_size, and learning_rate with the best parameters from problem 4\n#epochs = None\n#batch_size = None \n#learning_rate = None\nepochs = 10\nbatch_size = 50\nlearning_rate = 0.01\n\n\n### DON'T MODIFY ANYTHING BELOW ###\n# The accuracy measured against the test set\ntest_accuracy = 0.0\n\nwith tf.Session() as session:\n    \n    session.run(init)\n    batch_count = int(math.ceil(len(train_features)/batch_size))\n\n    for epoch_i in range(epochs):\n        \n        # Progress bar\n        batches_pbar = tqdm(range(batch_count), desc='Epoch {:>2}/{}'.format(epoch_i+1, epochs), unit='batches')\n        \n        # The training cycle\n        for batch_i in batches_pbar:\n            # Get a batch of training features and labels\n            batch_start = batch_i*batch_size\n            batch_features = train_features[batch_start:batch_start + batch_size]\n            batch_labels = train_labels[batch_start:batch_start + batch_size]\n\n            # Run optimizer\n            _ = session.run(optimizer, feed_dict={features: batch_features, labels: batch_labels, keep_prob: 1.0})\n\n        # Check accuracy against Test data\n        test_accuracy = session.run(accuracy, feed_dict={features: test_features, \n                                                                     labels: test_labels, keep_prob: 1.0})\n\nprint('Nice Job! Test Accuracy is {}'.format(test_accuracy))")
