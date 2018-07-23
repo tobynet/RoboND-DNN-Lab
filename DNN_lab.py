@@ -10,7 +10,7 @@
 
 # To start this lab, you first need to import all the necessary modules. Run the code below. If it runs successfully, it will print "`All modules imported`".
 
-# In[1]:
+# In[6]:
 
 
 import hashlib
@@ -27,14 +27,15 @@ from tqdm import tqdm
 from zipfile import ZipFile
 
 print('All modules imported.')
+dataset_directory = '../datasets/'
 
 
 # The notMNIST dataset is too large for many computers to handle.  It contains 500,000 images for just training.  You'll be using a subset of this data, 15,000 images for each label (A-J).
 
-# In[2]:
+# In[7]:
 
 
-dataset_directory = '../datasets/'
+
 
 def download(url, file):
     """
@@ -60,7 +61,7 @@ assert hashlib.md5(open(os.path.join(dataset_directory, 'notMNIST_test.zip'), 'r
 print('All files downloaded.')
 
 
-# In[3]:
+# In[8]:
 
 
 def uncompress_features_labels(file):
@@ -124,7 +125,7 @@ print('All features and labels uncompressed.')
 # X'=a+{\frac {\left(X-X_{\min }\right)\left(b-a\right)}{X_{\max }-X_{\min }}}
 # $
 
-# In[4]:
+# In[9]:
 
 
 # Problem 1 - Implement Min-Max scaling for grayscale image data
@@ -163,7 +164,7 @@ if not is_features_normal:
 print('Tests Passed!')
 
 
-# In[5]:
+# In[10]:
 
 
 if not is_labels_encod:
@@ -181,7 +182,7 @@ if not is_labels_encod:
 print('Labels One-Hot Encoded')
 
 
-# In[6]:
+# In[11]:
 
 
 assert is_features_normal, 'You skipped the step to normalize the features'
@@ -197,7 +198,7 @@ train_features, valid_features, train_labels, valid_labels = train_test_split(
 print('Training features and labels randomized and split.')
 
 
-# In[7]:
+# In[12]:
 
 
 # Save the data for easy access
@@ -228,7 +229,7 @@ print('Data cached in pickle file.')
 # # Checkpoint
 # All your progress is now saved to the pickle file.  If you need to leave and comeback to this lab, you no longer have to start from the beginning.  Just run the code block below and it will load all the data and modules required to proceed.
 
-# In[8]:
+# In[13]:
 
 
 get_ipython().run_line_magic('matplotlib', 'inline')
@@ -244,6 +245,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 # Reload the data
+dataset_directory = '../datasets/'
 
 pickle_file = os.path.join(dataset_directory, 'notMNIST.pickle.gz')
 with gzip.open(pickle_file, 'rb') as f:
@@ -276,7 +278,7 @@ print('Data and modules loaded.')
 #   - List of Variable Tensors with all zeros for each list index.
 #     - See <a href="https://www.tensorflow.org/api_docs/python/constant_op.html#zeros"> `tf.zeros()` documentation</a> for help.
 
-# In[42]:
+# In[16]:
 
 
 tf.reset_default_graph()
@@ -321,8 +323,8 @@ assert labels._op.name.startswith('Placeholder'), 'labels must be a placeholder'
 assert all(isinstance(weight, Variable) for weight in weights), 'weights must be a TensorFlow variable'
 assert all(isinstance(bias, Variable) for bias in biases), 'biases must be a TensorFlow variable'
 
-assert features._shape == None or (    features._shape.dims[0].value is None and    features._shape.dims[1].value in [None, 784]), 'The shape of features is incorrect'
-assert labels._shape  == None or (    labels._shape.dims[0].value is None and    labels._shape.dims[1].value in [None, 10]), 'The shape of labels is incorrect'
+assert features.shape == None or (    features.shape.dims[0].value is None and    features.shape.dims[1].value in [None, 784]), 'The shape of features is incorrect'
+assert labels.shape  == None or (    labels.shape.dims[0].value is None and    labels.shape.dims[1].value in [None, 10]), 'The shape of labels is incorrect'
 
 assert features._dtype == tf.float32, 'features must be type float32'
 assert labels._dtype == tf.float32, 'labels must be type float32'
@@ -338,7 +340,7 @@ print("done")
 # - [tf.nn.relu](https://www.tensorflow.org/api_docs/python/tf/nn/relu) for your ReLU activation function.
 # - [tf.nn.dropout](https://www.tensorflow.org/api_docs/python/tf/nn/dropout) for your dropout layer.
 
-# In[43]:
+# In[17]:
 
 
 if 'hidden_layer_1' in globals(): del hidden_layer_1; print('deleted')
@@ -347,7 +349,7 @@ if 'hidden_layer_3' in globals(): del hidden_layer_3; print('deleted')
 if 'logits' in globals(): del logits; print('deleted')
 
 
-# In[44]:
+# In[18]:
 
 
 # TODO: Hidden Layers with ReLU Activation and dropouts. "features" would be the input to the first layer.
@@ -380,7 +382,7 @@ print('hidden_layers: ', len(hidden_layers))
 # logits = hidden_layer_2 @ weights[2] + biases[2]
 
 
-# In[45]:
+# In[19]:
 
 
 ### DON'T MODIFY ANYTHING BELOW ###
@@ -407,130 +409,34 @@ print('Accuracy function created.')
 # 
 # You have another hyperparameter to tune now, however. Set the value for keep_probability and observe how it affects your results.
 
-# In[49]:
+# In[20]:
 
 
-# TODO: Find the best parameters for each configuration
-epochs = 10
-batch_size = 50
-learning_rate = 0.01
-keep_probability = 1.0
-
-
-### DON'T MODIFY ANYTHING BELOW ###
-# Gradient Descent
-optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss)    
-
-# The accuracy measured against the validation set
-validation_accuracy = 0.0
-
-# Measurements use for graphing loss and accuracy
-log_batch_step = 50
-batches = []
-loss_batch = []
-train_acc_batch = []
-valid_acc_batch = []
-
-with tf.Session() as session:
-    session.run(init)
-    batch_count = int(math.ceil(len(train_features)/batch_size))
-
-    for epoch_i in range(epochs):
-        
-        # Progress bar
-        batches_pbar = tqdm(range(batch_count), desc='Epoch {:>2}/{}'.format(epoch_i+1, epochs), unit='batches')
-        
-        # The training cycle
-        for batch_i in batches_pbar:
-            # Get a batch of training features and labels
-            batch_start = batch_i*batch_size
-            batch_features = train_features[batch_start:batch_start + batch_size]
-            batch_labels = train_labels[batch_start:batch_start + batch_size]
-
-            # Run optimizer and get loss
-            _, l = session.run(
-                [optimizer, loss],
-                feed_dict={features: batch_features, labels: batch_labels, keep_prob: keep_probability})
-
-            # Log every 50 batches
-            if not batch_i % log_batch_step:
-                # Calculate Training and Validation accuracy
-                training_accuracy = session.run(accuracy, feed_dict={features: train_features, 
-                                                                     labels: train_labels, keep_prob: keep_probability})
-                validation_accuracy = session.run(accuracy, feed_dict={features: valid_features, 
-                                                                     labels: valid_labels, keep_prob: 1.0})
-                # Log batches
-                previous_batch = batches[-1] if batches else 0
-                batches.append(log_batch_step + previous_batch)
-                loss_batch.append(l)
-                train_acc_batch.append(training_accuracy)
-                valid_acc_batch.append(validation_accuracy)
-
-        # Check accuracy against Validation data
-        validation_accuracy = session.run(accuracy, feed_dict={features: valid_features, 
-                                                                     labels: valid_labels, keep_prob: 1.0})
-        print('  Validation accuracy at {}'.format(validation_accuracy))
-
-
-loss_plot = plt.subplot(211)
-loss_plot.set_title('Loss')
-loss_plot.plot(batches, loss_batch, 'g')
-loss_plot.set_xlim([batches[0], batches[-1]])
-acc_plot = plt.subplot(212)
-acc_plot.set_title('Accuracy')
-acc_plot.plot(batches, train_acc_batch, 'r', label='Training Accuracy')
-acc_plot.plot(batches, valid_acc_batch, 'x', label='Validation Accuracy')
-acc_plot.set_ylim([0, 1.0])
-acc_plot.set_xlim([batches[0], batches[-1]])
-acc_plot.legend(loc=4)
-plt.tight_layout()
-plt.show()
-
-print('Validation accuracy at {}'.format(validation_accuracy))
+get_ipython().run_cell_magic('time', '', "# TODO: Find the best parameters for each configuration\nepochs = 10\nbatch_size = 50\nlearning_rate = 0.01\nkeep_probability = 1.0\n\n\n### DON'T MODIFY ANYTHING BELOW ###\n# Gradient Descent\noptimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss)    \n\n# The accuracy measured against the validation set\nvalidation_accuracy = 0.0\n\n# Measurements use for graphing loss and accuracy\nlog_batch_step = 50\nbatches = []\nloss_batch = []\ntrain_acc_batch = []\nvalid_acc_batch = []\n\nwith tf.Session() as session:\n    session.run(init)\n    batch_count = int(math.ceil(len(train_features)/batch_size))\n\n    for epoch_i in range(epochs):\n        \n        # Progress bar\n        batches_pbar = tqdm(range(batch_count), desc='Epoch {:>2}/{}'.format(epoch_i+1, epochs), unit='batches')\n        \n        # The training cycle\n        for batch_i in batches_pbar:\n            # Get a batch of training features and labels\n            batch_start = batch_i*batch_size\n            batch_features = train_features[batch_start:batch_start + batch_size]\n            batch_labels = train_labels[batch_start:batch_start + batch_size]\n\n            # Run optimizer and get loss\n            _, l = session.run(\n                [optimizer, loss],\n                feed_dict={features: batch_features, labels: batch_labels, keep_prob: keep_probability})\n\n            # Log every 50 batches\n            if not batch_i % log_batch_step:\n                # Calculate Training and Validation accuracy\n                training_accuracy = session.run(accuracy, feed_dict={features: train_features, \n                                                                     labels: train_labels, keep_prob: keep_probability})\n                validation_accuracy = session.run(accuracy, feed_dict={features: valid_features, \n                                                                     labels: valid_labels, keep_prob: 1.0})\n                # Log batches\n                previous_batch = batches[-1] if batches else 0\n                batches.append(log_batch_step + previous_batch)\n                loss_batch.append(l)\n                train_acc_batch.append(training_accuracy)\n                valid_acc_batch.append(validation_accuracy)\n\n        # Check accuracy against Validation data\n        validation_accuracy = session.run(accuracy, feed_dict={features: valid_features, \n                                                                     labels: valid_labels, keep_prob: 1.0})\n        print('  Validation accuracy at {}'.format(validation_accuracy))\n\n\nloss_plot = plt.subplot(211)\nloss_plot.set_title('Loss')\nloss_plot.plot(batches, loss_batch, 'g')\nloss_plot.set_xlim([batches[0], batches[-1]])\nacc_plot = plt.subplot(212)\nacc_plot.set_title('Accuracy')\nacc_plot.plot(batches, train_acc_batch, 'r', label='Training Accuracy')\nacc_plot.plot(batches, valid_acc_batch, 'x', label='Validation Accuracy')\nacc_plot.set_ylim([0, 1.0])\nacc_plot.set_xlim([batches[0], batches[-1]])\nacc_plot.legend(loc=4)\nplt.tight_layout()\nplt.show()\n\nprint('Validation accuracy at {}'.format(validation_accuracy))")
 
 
 # ## Test
 # Set the epochs, batch_size, and learning_rate with the best learning parameters you discovered in problem 4.  You're going to test your model against your hold out dataset/testing data.  This will give you a good indicator of how well the model will do in the real world.
 
-# In[50]:
+# In[21]:
 
 
-# TODO: Set the epochs, batch_size, and learning_rate with the best parameters from problem 4
-#epochs = None
-#batch_size = None 
-#learning_rate = None
-epochs = 10
-batch_size = 50
-learning_rate = 0.01
+get_ipython().run_cell_magic('time', '', "# TODO: Set the epochs, batch_size, and learning_rate with the best parameters from problem 4\n#epochs = None\n#batch_size = None \n#learning_rate = None\nepochs = 10\nbatch_size = 50\nlearning_rate = 0.01\n\n\n### DON'T MODIFY ANYTHING BELOW ###\n# The accuracy measured against the test set\ntest_accuracy = 0.0\n\nwith tf.Session() as session:\n    \n    session.run(init)\n    batch_count = int(math.ceil(len(train_features)/batch_size))\n\n    for epoch_i in range(epochs):\n        \n        # Progress bar\n        batches_pbar = tqdm(range(batch_count), desc='Epoch {:>2}/{}'.format(epoch_i+1, epochs), unit='batches')\n        \n        # The training cycle\n        for batch_i in batches_pbar:\n            # Get a batch of training features and labels\n            batch_start = batch_i*batch_size\n            batch_features = train_features[batch_start:batch_start + batch_size]\n            batch_labels = train_labels[batch_start:batch_start + batch_size]\n\n            # Run optimizer\n            _ = session.run(optimizer, feed_dict={features: batch_features, labels: batch_labels, keep_prob: 1.0})\n\n        # Check accuracy against Test data\n        test_accuracy = session.run(accuracy, feed_dict={features: test_features, \n                                                                     labels: test_labels, keep_prob: 1.0})\n\nprint('Nice Job! Test Accuracy is {}'.format(test_accuracy))")
 
 
-### DON'T MODIFY ANYTHING BELOW ###
-# The accuracy measured against the test set
-test_accuracy = 0.0
+# ## 試しにモデルを保存
+# 
+# ダメ。 学習セッション直後でなくてはいけないのかも
+
+# In[52]:
+
+
+save_file = './saved-models/train_model.ckpt'
+
+saver = tf.train.Saver()
 
 with tf.Session() as session:
-    
-    session.run(init)
-    batch_count = int(math.ceil(len(train_features)/batch_size))
-
-    for epoch_i in range(epochs):
-        
-        # Progress bar
-        batches_pbar = tqdm(range(batch_count), desc='Epoch {:>2}/{}'.format(epoch_i+1, epochs), unit='batches')
-        
-        # The training cycle
-        for batch_i in batches_pbar:
-            # Get a batch of training features and labels
-            batch_start = batch_i*batch_size
-            batch_features = train_features[batch_start:batch_start + batch_size]
-            batch_labels = train_labels[batch_start:batch_start + batch_size]
-
-            # Run optimizer
-            _ = session.run(optimizer, feed_dict={features: batch_features, labels: batch_labels, keep_prob: 1.0})
-
-        # Check accuracy against Test data
-        test_accuracy = session.run(accuracy, feed_dict={features: test_features, 
-                                                                     labels: test_labels, keep_prob: 1.0})
-
-print('Nice Job! Test Accuracy is {}'.format(test_accuracy))
+    # Save the model
+    saver.save(session, save_file)
+    print('Trained Model Saved.')
 
